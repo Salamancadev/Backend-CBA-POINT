@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Evento, PuntoDeControl, Asistencia, CodigoQR
+from .models import User, Evento, PuntoDeControl, Asistencia, QR
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,7 +21,7 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         model = Asistencia
         fields = ['id', 'usuario', 'evento', 'punto', 'fecha_registro', 'metodo', 'estado']
 
-class CodigoQRSerializer(serializers.ModelSerializer):
+class QRSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CodigoQR
+        model = QR
         fields = ['id', 'codigo', 'evento', 'punto', 'fecha_creacion', 'fecha_expiracion']

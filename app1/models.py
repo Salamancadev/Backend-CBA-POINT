@@ -73,7 +73,8 @@ class Asistencia(models.Model):
         return f"{self.usuario.nombre} - {self.evento.nombre}"
 
 #TABLA DE QR
-class CodigoQR(models.Model):
+class QR(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # default=1 asigna el primer usuario
     codigo = models.TextField(unique=True)
     evento = models.ForeignKey(Evento, on_delete=models.SET_NULL, null=True, blank=True)
     punto = models.ForeignKey(PuntoDeControl, on_delete=models.SET_NULL, null=True, blank=True)

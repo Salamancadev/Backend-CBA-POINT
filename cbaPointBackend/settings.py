@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -140,4 +141,19 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+}
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Permite la autenticación estándar de Django
+]
+
+AUTH_USER_MODEL = 'app1.User'  # Asegúrate de que Django esté utilizando tu modelo de usuario personalizado
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=30),  # Duración del Access Token (por ejemplo, 30 días)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=90),  # Duración del Refresh Token (por ejemplo, 90 días)
+    'ROTATE_REFRESH_TOKENS': True,  # Si se deben rotar los tokens de refresco
+    'BLACKLIST_AFTER_ROTATION': True,  # Si se deben eliminar los refresh tokens viejos
+    'ALGORITHM': 'HS256',  # Algoritmo de encriptación
+    'SIGNING_KEY': 'your_secret_key',  # Cambia esto por una clave secreta más segura
 }
