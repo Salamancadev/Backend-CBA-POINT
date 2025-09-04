@@ -45,6 +45,7 @@ class LoginView(APIView):
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
+            "role": user.rol  # Asegúrate de enviar el rol del usuario
         }, status=status.HTTP_200_OK)
 
 
