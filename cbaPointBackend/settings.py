@@ -136,6 +136,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  #Conección a frontend con Vue.js
 ]
 
+# STATIC_URL= BASE_DIR/'staticfiles'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
