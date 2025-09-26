@@ -1,4 +1,4 @@
-import os
+﻿import os
 import dj_database_url
 from .settings import *
 from .settings import BASE_DIR
@@ -24,9 +24,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",  #Conección a frontend con Vue.js
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "https://frontend-cba-point.onrender.com/",  #Conección a frontend con Vue.js
+]
 
 STORAGE = {
     "default": {
