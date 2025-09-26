@@ -25,7 +25,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://frontend-cba-point.onrender.com/",  #Conección a frontend con Vue.js
+    "https://frontend-cba-point.onrender.com",  #Conección a frontend con Vue.js
 ]
 
 STORAGE = {
