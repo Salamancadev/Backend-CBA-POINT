@@ -41,6 +41,32 @@ class LoginView(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
 
+        # Crear tokens
+        refresh = RefreshToken.for_user(user)
+
+        # Serializar usuario completo
+        serializer = UserSerializer(user)
+
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": serializer.data  # <-- agregamos el usuario completo
+        }, status=status.HTTP_200_OK)
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        documento = request.data.get("documento")
+        password = request.data.get("password")
+
+        try:
+            user = User.objects.get(documento=documento)
+            if not user.check_password(password):
+                raise ValueError("Contraseña incorrecta")
+        except User.DoesNotExist:
+            return Response({"error": "Usuario no encontrado"}, status=400)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
+
         refresh = RefreshToken.for_user(user)
         return Response({
             "access": str(refresh.access_token),
