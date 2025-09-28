@@ -4,7 +4,8 @@ from .views import (
     CrearEventoView, GetEventosView,
     RegistrarAsistenciaView, GetAsistenciasView, HistorialAsistenciaView,
     GenerarQRView, GetQRsView,
-    GetUsersView, GetUserByDocumentoView
+    GetUsersView, GetUserByDocumentoView,
+    AdminStatsView
 )
 
 urlpatterns = [
@@ -12,6 +13,9 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('perfil/', PerfilUsuarioView.as_view(), name='perfil'),
+
+    # Admin Stats
+    path('admin/stats/', AdminStatsView.as_view(), name='admin-stats'),
 
     # Eventos
     path('eventos/crear/', CrearEventoView.as_view(), name='crear_evento'),
@@ -27,6 +31,6 @@ urlpatterns = [
     path('qr/listar/', GetQRsView.as_view(), name='listar_qr'),
 
     # Usuarios
-    path('usuarios/', GetUsersView.as_view(), name='listar_usuarios'),
-    path('usuarios/<str:documento>/', GetUserByDocumentoView.as_view(), name='usuario_por_documento'),
+    path('users/', GetUsersView.as_view(), name='listar_usuarios'),
+    path('users/<str:documento>/', GetUserByDocumentoView.as_view(), name='usuario_por_documento'),
 ]

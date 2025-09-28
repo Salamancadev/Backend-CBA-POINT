@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.utils.dateparse import parse_datetime
-from django.contrib.auth import authenticate
+from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, QR, Evento, Asistencia
 from .serializers import UserSerializer, EventoSerializer, AsistenciaSerializer, QRSerializer
@@ -18,8 +18,7 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()  # Crea usuario y valida contraseñas
-            # Crear QR inicial para el usuario
+            user = serializer.save()
             QR.objects.create(usuario=user, codigo=str(uuid.uuid4()))
             return Response({"mensaje": "Usuario registrado correctamente"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -41,37 +40,14 @@ class LoginView(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
 
-        # Crear tokens
         refresh = RefreshToken.for_user(user)
-
-        # Serializar usuario completo
         serializer = UserSerializer(user)
 
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "user": serializer.data  # <-- agregamos el usuario completo
-        }, status=status.HTTP_200_OK)
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        documento = request.data.get("documento")
-        password = request.data.get("password")
-
-        try:
-            user = User.objects.get(documento=documento)
-            if not user.check_password(password):
-                raise ValueError("Contraseña incorrecta")
-        except User.DoesNotExist:
-            return Response({"error": "Usuario no encontrado"}, status=400)
-        except ValueError as e:
-            return Response({"error": str(e)}, status=400)
-
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "role": user.rol  # Asegúrate de enviar el rol del usuario
+            "role": user.rol,
+            "user": serializer.data
         }, status=status.HTTP_200_OK)
 
 
@@ -81,6 +57,33 @@ class PerfilUsuarioView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# --------------------------
+# Admin stats para Dashboard
+
+class AdminStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        total_aprendices = User.objects.filter(rol='Aprendiz').count()
+        active_events = Evento.objects.filter(activo=True).count()
+        today = timezone.now().date()
+        today_attendance = Asistencia.objects.filter(fecha_registro__date=today).count()
+        total_asistencias = Asistencia.objects.count()
+
+        attendance_percentage = 0
+        total_usuarios = User.objects.count()
+        total_eventos = Evento.objects.count()
+        if total_eventos > 0 and total_usuarios > 0:
+            attendance_percentage = round((total_asistencias / (total_eventos * total_usuarios)) * 100, 2)
+
+        return Response({
+            "totalAprendices": total_aprendices,
+            "activeEvents": active_events,
+            "todayAttendance": today_attendance,
+            "attendancePercentage": attendance_percentage
+        })
 
 
 # --------------------------
@@ -110,7 +113,6 @@ class CrearEventoView(APIView):
             jornada=jornada,
             docente=docente
         )
-
         serializer = EventoSerializer(evento)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -125,7 +127,7 @@ class GetEventosView(APIView):
 
 
 # --------------------------
-# Asistencia
+# Asistencias
 
 class RegistrarAsistenciaView(APIView):
     permission_classes = [IsAuthenticated]
@@ -142,14 +144,10 @@ class RegistrarAsistenciaView(APIView):
 
         usuario = request.user
 
-        # Validar QR si el método es 'qr'
         if metodo == 'qr':
             codigo_qr = request.data.get('codigo_qr')
             try:
                 qr = QR.objects.get(codigo=codigo_qr, evento=evento)
-                # Opcional: marcar QR como usado
-                # qr.usado = True
-                # qr.save()
             except QR.DoesNotExist:
                 return Response({'error': 'Código QR no válido para este evento'}, status=400)
 
@@ -163,7 +161,7 @@ class RegistrarAsistenciaView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class HistorialAsistenciaView(APIView):
+class GetAsistenciasView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -172,7 +170,7 @@ class HistorialAsistenciaView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class GetAsistenciasView(APIView):
+class HistorialAsistenciaView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -218,7 +216,7 @@ class GetQRsView(APIView):
 
 
 # --------------------------
-# Consultas de usuarios
+# Usuarios
 
 class GetUsersView(APIView):
     permission_classes = [IsAuthenticated]
