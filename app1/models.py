@@ -1,11 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+import uuid
+import datetime
 
-# Create your models here.
-
-# TABLA DE USUARIOS
+# --------------------------
+# MANAGER DE USUARIOS
 class CustomUserManager(BaseUserManager):
-    def create_user(self, documento, nombre, apellido, email, rol, tipo_documento=None, acepta_terminos=False, password=None):
+    def create_user(self, documento, nombre, apellido, email, rol, tipo_documento=None, acepta_terminos=False, ficha=None, password=None):
         if not email:
             raise ValueError('El email debe ser proporcionado')
         user = self.model(
@@ -15,7 +16,8 @@ class CustomUserManager(BaseUserManager):
             email=email,
             rol=rol,
             tipo_documento=tipo_documento,
-            acepta_terminos=acepta_terminos
+            acepta_terminos=acepta_terminos,
+            ficha=ficha
         )
         user.set_password(password)
         user.save(using=self._db)
@@ -35,25 +37,37 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+# --------------------------
+# TABLA DE USUARIOS
 class User(AbstractBaseUser, PermissionsMixin):
     documento = models.CharField(max_length=50, unique=True)
     tipo_documento = models.CharField(
         max_length=50,
-        choices=[('Cédula de ciudadania', 'Cédula de ciudadania'),
-                 ('Tarjeta de identidad', 'Tarjeta de identidad'),
-                 ('Cédula de extranjeria', 'Cédula de extranjeria')],
+        choices=[
+            ('Cédula de ciudadania', 'Cédula de ciudadania'),
+            ('Tarjeta de identidad', 'Tarjeta de identidad'),
+            ('Cédula de extranjeria', 'Cédula de extranjeria')
+        ],
         null=True, blank=True
     )
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
+    ficha = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(unique=True)
     rol = models.CharField(
         max_length=50,
-        choices=[('Aprendiz', 'Aprendiz'), ('Instructor', 'Instructor'), ('Administrativo', 'Administrativo')]
+        choices=[('Aprendiz','Aprendiz'), ('Instructor','Instructor'), ('Administrativo','Administrativo')]
     )
-    jornada = models.CharField(max_length=50, null=True, blank=True)
+    jornada = models.CharField(
+        max_length=50,
+        choices=[('mañana','Mañana'), ('tarde','Tarde'), ('mixto','Mixto')],
+        null=True,
+        blank=True
+    )
     fecha_registro = models.DateTimeField(auto_now_add=True)
     acepta_terminos = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_admin = models.BooleanField(default=False)
 
     objects = CustomUserManager()
 
@@ -63,42 +77,56 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
 
+# --------------------------
 # TABLA DE EVENTOS
 class Evento(models.Model):
     nombre = models.CharField(max_length=150)
-    tipo = models.CharField(max_length=50, choices=[('inducción', 'Inducción'), ('clase', 'Clase'), ('recorrido', 'Recorrido'), ('evento', 'Evento')])
+    tipo = models.CharField(
+        max_length=50,
+        choices=[('inducción','Inducción'), ('clase','Clase'), ('recorrido','Recorrido'), ('evento','Evento')]
+    )
     fecha_inicio = models.DateTimeField()
     fecha_fin = models.DateTimeField()
+    jornada = models.CharField(
+        max_length=50,
+        choices=[('mañana','Mañana'), ('tarde','Tarde'), ('mixto','Mixto')],
+        null=True,
+        blank=True
+    )
     docente = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     activo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nombre
 
-# TABLA DE PUNTOS DE CONTROL
+# --------------------------
+# PUNTOS DE CONTROL (POI)
 class PuntoDeControl(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField()
     latitud = models.DecimalField(max_digits=9, decimal_places=6)
     longitud = models.DecimalField(max_digits=9, decimal_places=6)
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE, null=True, blank=True)
+    activo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nombre
-    
-#TABLA DE ASISTENCIAS
+
+# --------------------------
+# ASISTENCIAS
 class Asistencia(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
     punto = models.ForeignKey(PuntoDeControl, on_delete=models.SET_NULL, null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
-    metodo = models.CharField(max_length=50, choices=[('qr', 'QR'), ('gps', 'GPS'), ('manual', 'Manual')])
-    estado = models.CharField(max_length=50, choices=[('presente', 'Presente'), ('ausente', 'Ausente'), ('tarde', 'Tarde')])
+    metodo = models.CharField(max_length=50, choices=[('qr','QR'), ('gps','GPS'), ('manual','Manual')])
+    estado = models.CharField(max_length=50, choices=[('presente','Presente'), ('ausente','Ausente'), ('tarde','Tarde')])
 
     def __str__(self):
         return f"{self.usuario.nombre} - {self.evento.nombre}"
 
-#TABLA DE QR
+# --------------------------
+# CÓDIGOS QR
 class QR(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     codigo = models.TextField(unique=True)
@@ -106,6 +134,7 @@ class QR(models.Model):
     punto = models.ForeignKey(PuntoDeControl, on_delete=models.SET_NULL, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_expiracion = models.DateTimeField(null=True, blank=True)
+    activo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.codigo

@@ -9,6 +9,7 @@ from .models import User, QR, Evento, Asistencia
 from .serializers import UserSerializer, EventoSerializer, AsistenciaSerializer, QRSerializer
 import uuid
 
+
 # --------------------------
 # Usuarios y Autenticación
 
@@ -87,6 +88,65 @@ class AdminStatsView(APIView):
 
 
 # --------------------------
+# Gestión de usuarios (CRUD para admin)
+
+class GetUsersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        usuarios = User.objects.all()
+        serializer = UserSerializer(usuarios, many=True)
+        return Response(serializer.data, status=200)
+
+
+class CreateUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data.copy()
+        # Si no envían password, usar documento como contraseña
+        if not data.get('password'):
+            data['password'] = data['documento']
+        if not data.get('confirm'):
+            data['confirm'] = data['documento']
+
+        serializer = UserSerializer(data=data)
+        if serializer.is_valid():
+            user = serializer.save()
+            QR.objects.create(usuario=user, codigo=str(uuid.uuid4()))
+            return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UpdateUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=404)
+
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
+class DeleteUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+            user.delete()
+            return Response({'mensaje': 'Usuario eliminado correctamente'}, status=200)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=404)
+
+
+# --------------------------
 # Eventos
 
 class CrearEventoView(APIView):
@@ -106,7 +166,7 @@ class CrearEventoView(APIView):
             return Response({'error': 'Docente no encontrado'}, status=404)
 
         evento = Evento.objects.create(
-            nombre=nombre,
+            nombre=nombre,  
             tipo=tipo,
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin,

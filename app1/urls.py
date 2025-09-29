@@ -4,33 +4,42 @@ from .views import (
     CrearEventoView, GetEventosView,
     RegistrarAsistenciaView, GetAsistenciasView, HistorialAsistenciaView,
     GenerarQRView, GetQRsView,
-    GetUsersView, GetUserByDocumentoView,
-    AdminStatsView
+    GetUsersView, GetUserByDocumentoView, AdminStatsView,
+    CreateUserView, UpdateUserView, DeleteUserView
 )
 
 urlpatterns = [
+    # --------------------------
     # Autenticación
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('perfil/', PerfilUsuarioView.as_view(), name='perfil'),
 
-    # Admin Stats
+    # --------------------------
+    # Admin Stats (Dashboard)
     path('admin/stats/', AdminStatsView.as_view(), name='admin-stats'),
 
+    # --------------------------
     # Eventos
     path('eventos/crear/', CrearEventoView.as_view(), name='crear_evento'),
     path('eventos/listar/', GetEventosView.as_view(), name='listar_eventos'),
 
+    # --------------------------
     # Asistencias
     path('asistencias/registrar/', RegistrarAsistenciaView.as_view(), name='registrar_asistencia'),
     path('asistencias/listar/', GetAsistenciasView.as_view(), name='listar_asistencias'),
     path('asistencias/historial/', HistorialAsistenciaView.as_view(), name='historial_asistencia'),
 
+    # --------------------------
     # QR
     path('qr/crear/', GenerarQRView.as_view(), name='generar_qr'),
     path('qr/listar/', GetQRsView.as_view(), name='listar_qr'),
 
-    # Usuarios
-    path('users/', GetUsersView.as_view(), name='listar_usuarios'),
-    path('users/<str:documento>/', GetUserByDocumentoView.as_view(), name='usuario_por_documento'),
+    # --------------------------
+    # Usuarios - Gestión Admin
+    path('users/', GetUsersView.as_view(), name='listar_usuarios'),  # GET all
+    path('users/create/', CreateUserView.as_view(), name='crear_usuario'),  # POST
+    path('users/<int:pk>/update/', UpdateUserView.as_view(), name='editar_usuario'),  # PUT
+    path('users/<int:pk>/delete/', DeleteUserView.as_view(), name='eliminar_usuario'),  # DELETE
+    path('users/<str:documento>/', GetUserByDocumentoView.as_view(), name='usuario_por_documento'),  # GET by documento
 ]
