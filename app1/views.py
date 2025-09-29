@@ -147,34 +147,67 @@ class DeleteUserView(APIView):
 
 
 # --------------------------
-# Eventos
-
+# Gestión de eventos
 class CrearEventoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        nombre = request.data.get('nombre')
-        tipo = request.data.get('tipo')
-        fecha_inicio = parse_datetime(request.data.get('fecha_inicio'))
-        fecha_fin = parse_datetime(request.data.get('fecha_fin'))
-        jornada = request.data.get('jornada', None)
-        docente_id = request.data.get('docente_id')
-
-        try:
-            docente = User.objects.get(id=docente_id)
-        except User.DoesNotExist:
-            return Response({'error': 'Docente no encontrado'}, status=404)
+        data = request.data
+        docente = None
+        docente_id = data.get('docente_id')
+        if docente_id:
+            try:
+                docente = User.objects.get(pk=docente_id)
+            except User.DoesNotExist:
+                return Response({'error': 'Docente no encontrado'}, status=404)
 
         evento = Evento.objects.create(
-            nombre=nombre,  
-            tipo=tipo,
-            fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin,
-            jornada=jornada,
-            docente=docente
+            nombre=data.get('nombre'),
+            tipo=data.get('tipo'),
+            fecha_inicio=parse_datetime(data.get('fecha_inicio')),
+            fecha_fin=parse_datetime(data.get('fecha_fin')),
+            jornada=data.get('jornada', None),
+            docente=docente,
+            activo=data.get('activo', True)
         )
         serializer = EventoSerializer(evento)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=201)
+
+
+class UpdateEventoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        try:
+            evento = Evento.objects.get(pk=pk)
+        except Evento.DoesNotExist:
+            return Response({'error': 'Evento no encontrado'}, status=404)
+
+        # Asignar docente si viene docente_id
+        docente_id = request.data.get('docente_id')
+        if docente_id:
+            try:
+                docente = User.objects.get(pk=docente_id)
+                request.data['docente'] = docente.pk
+            except User.DoesNotExist:
+                return Response({'error': 'Docente no encontrado'}, status=404)
+
+        serializer = EventoSerializer(evento, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+class DeleteEventoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            evento = Evento.objects.get(pk=pk)
+            evento.delete()
+            return Response({'mensaje': 'Evento eliminado correctamente'}, status=200)
+        except Evento.DoesNotExist:
+            return Response({'error': 'Evento no encontrado'}, status=404)
 
 
 class GetEventosView(APIView):
@@ -183,7 +216,7 @@ class GetEventosView(APIView):
     def get(self, request):
         eventos = Evento.objects.all()
         serializer = EventoSerializer(eventos, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=200)
 
 
 # --------------------------

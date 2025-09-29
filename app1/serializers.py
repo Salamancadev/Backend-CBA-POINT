@@ -55,10 +55,21 @@ class UserSerializer(serializers.ModelSerializer):
 
 # --------------------------
 # SERIALIZADOR DE EVENTOS
+from rest_framework import serializers
+from .models import Evento, User
+
 class EventoSerializer(serializers.ModelSerializer):
+    docente_id = serializers.PrimaryKeyRelatedField(
+        source='docente',  # mapea al campo docente del modelo
+        queryset=User.objects.filter(rol='Instructor'),
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = Evento
-        fields = ['id', 'nombre', 'tipo', 'fecha_inicio', 'fecha_fin', 'jornada', 'docente', 'activo']
+        fields = ['id', 'nombre', 'tipo', 'fecha_inicio', 'fecha_fin', 'jornada', 'docente', 'docente_id', 'activo']
+        read_only_fields = ['docente']  # para que la representación muestre el docente completo
 
 # --------------------------
 # SERIALIZADOR DE PUNTOS DE CONTROL

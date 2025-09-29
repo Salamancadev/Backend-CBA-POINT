@@ -5,7 +5,7 @@ from .views import (
     RegistrarAsistenciaView, GetAsistenciasView, HistorialAsistenciaView,
     GenerarQRView, GetQRsView,
     GetUsersView, GetUserByDocumentoView, AdminStatsView,
-    CreateUserView, UpdateUserView, DeleteUserView
+    CreateUserView, UpdateUserView, DeleteUserView, UpdateEventoView, DeleteEventoView
 )
 
 urlpatterns = [
@@ -23,6 +23,8 @@ urlpatterns = [
     # Eventos
     path('eventos/crear/', CrearEventoView.as_view(), name='crear_evento'),
     path('eventos/listar/', GetEventosView.as_view(), name='listar_eventos'),
+    path('eventos/<int:pk>/update/', UpdateEventoView.as_view(), name='editar_evento'),  # PUT
+    path('eventos/<int:pk>/delete/', DeleteEventoView.as_view(), name='eliminar_evento'),  # DELETE
 
     # --------------------------
     # Asistencias
